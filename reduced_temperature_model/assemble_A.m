@@ -1,0 +1,110 @@
+function A=assemble_A(d2,d5,d13,d14,d40,d41,d43,d45,Np,Ns,Nn,Nr,r_half,r_whole)
+    dim=Np+2+Ns+2+Nn+2+Np*Nr+Nn*Nr+Np+Nn+Np+Nn+Np+Nn+Np+2+Ns+2+Nn+2+1; % dimension of matrix A
+    
+    A=zeros(dim);
+    
+    % indices for convenience
+    [id_cs,id_cn,id_ap,id_an,id_sp,id_sn,id_jp,id_jn,id_Phip,id_Phin,id_phip,id_phis,id_phin,id_T]=indices(Np,Ns,Nn,Nr);
+    
+    % A0101
+    A0101=eye(Np+2); % check
+    A0101(1,1)=-1; A0101(1,2)=1; A0101(end,end)=0; % check
+    A(1:Np+2,1:Np+2)=A0101; % check
+    
+    % A0108
+    A(2:Np+1,id_jp+1:id_jp+Np)=d2*eye(Np); % check
+    
+    % A0201
+    A(id_cs+1,id_cs-1)=1; A(id_cs+1,id_cs)=1; % check
+    
+    % A0202
+    A0202=eye(Ns+2); % check
+    A0202(1,1)=-1; A0202(1,2)=-1; A0202(end,end-1)=1; % check
+    A(id_cs+1:id_cs+Ns+2,id_cs+1:id_cs+Ns+2)=A0202; % check
+    
+    % A0203
+    A(id_cn,id_cn+1)=-1; A(id_cn,id_cn+2)=-1; % check
+    
+    % A0303
+    A0303=eye(Nn+2); % check
+    A0303(1,1)=0; A0303(end,end-1)=-1; % check
+    A(id_cn+1:id_cn+Nn+2,id_cn+1:id_cn+Nn+2)=A0303; % check
+    
+    % A0309
+    A(id_cn+2:id_cn+Nn+1,id_jn+1:id_jn+Nn)=d5*eye(Nn); % check
+    
+    % A0404
+    ap_bot=d43*(r_half(1:end-1)./r_whole(2:end)).^2;
+    ap_diag=[1-d43*((r_half(1)/r_whole(1))^2);1-d43*(r_half(2:end-1)./r_whole(2:end-1)).^2-d43*(r_half(1:end-2)./r_whole(2:end-1)).^2;1-d43*(r_half(end-1)/r_whole(end)).^2];
+    ap_top=[0;d43*(r_half(1)/r_whole(1))^2;d43*(r_half(2:end-1)./r_whole(2:end-1)).^2];
+    apMat=spdiags(ap_bot,-1,Nr,Nr)+spdiags(ap_diag,0,Nr,Nr)+spdiags(ap_top,1,Nr,Nr);
+    A(id_ap+1:id_ap+Np*Nr,id_ap+1:id_ap+Np*Nr)=kron(eye(Np),apMat);
+    
+    % A0505
+    an_bot=d45*(r_half(1:end-1)./r_whole(2:end)).^2;
+    an_diag=[1-d45*((r_half(1)/r_whole(1))^2);1-d45*(r_half(2:end-1)./r_whole(2:end-1)).^2-d45*(r_half(1:end-2)./r_whole(2:end-1)).^2;1-d45*(r_half(end-1)/r_whole(end)).^2];
+    an_top=[0;d45*(r_half(1)/r_whole(1))^2;d45*(r_half(2:end-1)./r_whole(2:end-1)).^2];
+    anMat=spdiags(an_bot,-1,Nr,Nr)+spdiags(an_diag,0,Nr,Nr)+spdiags(an_top,1,Nr,Nr);
+    A(id_an+1:id_an+Nn*Nr,id_an+1:id_an+Nn*Nr)=kron(eye(Nn),anMat);
+    
+    % A0604
+    sp_ap_vec=zeros(1,Nr); sp_ap_vec(end)=-1;
+    A(id_sp+1:id_sp+Np,id_ap+1:id_ap+Np*Nr)=kron(eye(Np),sp_ap_vec);
+    
+    % A0606
+    A(id_sp+1:id_sp+Np,id_sp+1:id_sp+Np)=eye(Np);
+    
+    % A0705
+    sn_an_vec=zeros(1,Nr); sn_an_vec(end)=-1;
+    A(id_sn+1:id_sn+Nn,id_an+1:id_an+Nn*Nr)=kron(eye(Nn),sn_an_vec);
+    
+    % A0707
+    A(id_sn+1:id_sn+Nn,id_sn+1:id_sn+Nn)=eye(Nn);
+    
+    % A0808
+    A(id_jp+1:id_jp+Np,id_jp+1:id_jp+Np)=eye(Np); % check
+    
+    % A0909
+    A(id_jn+1:id_jn+Nn,id_jn+1:id_jn+Nn)=eye(Nn); % check
+    
+    % A1008
+    A(id_Phip+1:id_Phip+Np,id_jp+1:id_jp+Np)=d13*eye(Np); % check
+    
+    % A1010
+    A1010=spdiags([ones(Np,1),-2*ones(Np,1),ones(Np,1)],-1:1,Np,Np); % check
+    A1010(1,1)=-1; A1010(end,end)=-1; % check
+    A(id_Phip+1:id_Phip+Np,id_Phip+1:id_Phip+Np)=A1010; % check
+    
+    % A1109
+    A(id_Phin+1:id_Phin+Nn,id_jn+1:id_jn+Nn)=d14*eye(Nn); % check
+    
+    % A1111
+    A1111=spdiags([ones(Nn,1),-2*ones(Nn,1),ones(Nn,1)],-1:1,Nn,Nn); % check
+    A1111(1,1)=-1; A1111(end,end)=-1; % check
+    A(id_Phin+1:id_Phin+Nn,id_Phin+1:id_Phin+Nn)=A1111; % check
+    
+    % A1208
+    A(id_phip+2:id_phip+Np+1,id_jp+1:id_jp+Np)=eye(Np); % check
+    
+    % A1212
+    A(id_phip+1,id_phip+1)=-1; A(id_phip+1,id_phip+2)=1; % check
+    
+    % A1312
+    A(id_phis+1,id_phis-1)=1; A(id_phis+1,id_phis)=1; % check
+    
+    % A1313
+    A(id_phis+1,id_phis+1)=-1; A(id_phis+1,id_phis+2)=-1; % check
+    A(id_phin,id_phin-1)=1; A(id_phin,id_phin)=1; % check
+    
+    % A1314
+    A(id_phin,id_phin+1)=-1; A(id_phin,id_phin+2)=-1; % check
+    
+    % A1409
+    A(id_phin+2:id_phin+Nn+1,id_jn+1:id_jn+Nn)=eye(Nn);
+    
+    % A1414
+    A(id_phin+Nn+2,id_phin+Nn+1)=1; A(id_phin+Nn+2,id_phin+Nn+2)=1;
+    
+    % A1515
+    A(id_T+1,id_T+1)=1-d40-d41;
+end
